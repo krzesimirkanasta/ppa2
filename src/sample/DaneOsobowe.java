@@ -3,9 +3,9 @@ package sample;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+
+import com.thoughtworks.xstream.XStream;
 
 import javafx.event.ActionEvent;
 import javafx.scene.control.TableColumn;
@@ -66,9 +66,11 @@ public class DaneOsobowe implements HierarchicalController<MainController> {
 
     public void zapisz(ActionEvent actionEvent) {
         ArrayList<Student> studentsList = new ArrayList<>(tabelka.getItems());
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("data.obj"))) {
-            oos.writeObject(studentsList);
-            oos.close();
+        XStream xstream = new XStream();
+
+        try (FileOutputStream fos = new FileOutputStream("data.xml")) {
+            xstream.toXML(studentsList, fos);
+            fos.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -77,14 +79,13 @@ public class DaneOsobowe implements HierarchicalController<MainController> {
     /** Uwaga na serializację: https://sekurak.pl/java-vs-deserializacja-niezaufanych-danych-i-zdalne-wykonanie-kodu-czesc-i/ */
     public void wczytaj(ActionEvent actionEvent) {
         ArrayList<Student> studentsList;
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream("data.obj"))) {
-            studentsList = (ArrayList<Student>) ois.readObject();
+        XStream xstream = new XStream();
+        try (FileInputStream ois = new FileInputStream("data.xml")) {
+            studentsList = (ArrayList<Student>) xstream.fromXML(ois);
             tabelka.getItems().clear();
             tabelka.getItems().addAll(studentsList);
             ois.close();
         } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
