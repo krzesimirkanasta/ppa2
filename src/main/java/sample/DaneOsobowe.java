@@ -1,19 +1,25 @@
 package sample;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.List;
 
+import com.opencsv.*;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
 
 import javafx.event.ActionEvent;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
  * Created by pwilkin on 30-Nov-17.
@@ -24,11 +30,11 @@ public class DaneOsobowe implements HierarchicalController<MainController> {
     public TextField nazwisko;
     public TextField pesel;
     public TextField indeks;
-    public TableView<sample.Student> tabelka;
-    private sample.MainController parentController;
+    public TableView<Student> tabelka;
+    private MainController parentController;
 
     public void dodaj(ActionEvent actionEvent) {
-        sample.Student st = new sample.Student();
+        Student st = new Student();
         st.setName(imie.getText());
         st.setSurname(nazwisko.getText());
         st.setPesel(pesel.getText());
@@ -36,7 +42,7 @@ public class DaneOsobowe implements HierarchicalController<MainController> {
         tabelka.getItems().add(st);
     }
 
-    public void setParentController(sample.MainController parentController) {
+    public void setParentController(MainController parentController) {
         this.parentController = parentController;
         //tabelka.getItems().addAll(parentController.getDataContainer().getStudents());
         tabelka.setItems(parentController.getDataContainer().getStudents());
@@ -47,12 +53,12 @@ public class DaneOsobowe implements HierarchicalController<MainController> {
         tabelka.getItems().addAll(parentController.getDataContainer().getStudents());
     }
 
-    public sample.MainController getParentController() {
+    public MainController getParentController() {
         return parentController;
     }
 
     public void initialize() {
-        for (TableColumn<sample.Student, ?> studentTableColumn : tabelka.getColumns()) {
+        for (TableColumn<Student, ?> studentTableColumn : tabelka.getColumns()) {
             if ("imie".equals(studentTableColumn.getId())) {
                 studentTableColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
             } else if ("nazwisko".equals(studentTableColumn.getId())) {
@@ -66,54 +72,47 @@ public class DaneOsobowe implements HierarchicalController<MainController> {
 
     }
 
-    public void zapisz(ActionEvent actionEvent) {
-        XSSFWorkbook wb = new XSSFWorkbook();
-        XSSFSheet sheet = wb.createSheet("Studenci");
-        int row = 0;
-        for (sample.Student student : tabelka.getItems()) {
-            XSSFRow r = sheet.createRow(row);
-            r.createCell(0).setCellValue(student.getName());
-            r.createCell(1).setCellValue(student.getSurname());
-            if (student.getGrade() != null) {
-                r.createCell(2).setCellValue(student.getGrade());
-            }
-            r.createCell(3).setCellValue(student.getGradeDetailed());
-            r.createCell(4).setCellValue(student.getIdx());
-            r.createCell(5).setCellValue(student.getPesel());
-            row++;
+    public void zapisz(ActionEvent actionEvent) throws IOException {
+
+        List<String[]> entries = new ArrayList<>();
+        for (Student student : tabelka.getItems()){
+            String[] items = {student.getName(), student.getSurname(), String.valueOf(student.getGrade()), student.getGradeDetailed(), student.getIdx(), student.getPesel()};
+            entries.add(items);
         }
-        try (FileOutputStream fos = new FileOutputStream("data.xlsx")) {
-            wb.write(fos);
-            fos.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+
+        String fileName = "datacsv.csv";
+
+        try (FileOutputStream fos = new FileOutputStream(fileName);
+             OutputStreamWriter osw = new OutputStreamWriter(fos,
+                     StandardCharsets.UTF_8);
+             CSVWriter writer = new CSVWriter(osw, ';')) {
+
+            writer.writeAll(entries);
         }
     }
 
-    /** Uwaga na serializację: https://sekurak.pl/java-vs-deserializacja-niezaufanych-danych-i-zdalne-wykonanie-kodu-czesc-i/ */
-    public void wczytaj(ActionEvent actionEvent) {
-        ArrayList<sample.Student> studentsList = new ArrayList<>();
-        try (FileInputStream ois = new FileInputStream("data.xlsx")) {
-            XSSFWorkbook wb = new XSSFWorkbook(ois);
-            XSSFSheet sheet = wb.getSheet("Studenci");
-            for (int i = 0; i <= sheet.getLastRowNum(); i++) {
-                XSSFRow row = sheet.getRow(i);
-                sample.Student student = new sample.Student();
-                student.setName(row.getCell(0).getStringCellValue());
-                student.setSurname(row.getCell(1).getStringCellValue());
-                if (row.getCell(2) != null) {
-                    student.setGrade(row.getCell(2).getNumericCellValue());
+    /**
+     * Uwaga na serializację: https://sekurak.pl/java-vs-deserializacja-niezaufanych-danych-i-zdalne-wykonanie-kodu-czesc-i/
+     */
+    public void wczytaj(ActionEvent actionEvent) throws IOException {
+        ArrayList<Student> studentsList = new ArrayList<>();
+
+        try (CSVReader reader = new CSVReader(new FileReader("datacsv.csv"), ';')) {
+            List<String[]> rows = reader.readAll();
+            for (String[] row : rows) {
+                Student student = new Student();
+                student.setName(row[0]);
+                student.setSurname(row[1]);
+                if (!row[2].equals("null")){
+                    student.setGrade(Double.parseDouble(row[2]));
                 }
-                student.setGradeDetailed(row.getCell(3).getStringCellValue());
-                student.setIdx(row.getCell(4).getStringCellValue());
-                student.setPesel(row.getCell(5).getStringCellValue());
+                student.setGradeDetailed(row[3]);
+                student.setIdx(row[4]);
+                student.setPesel(row[5]);
                 studentsList.add(student);
             }
             tabelka.getItems().clear();
             tabelka.getItems().addAll(studentsList);
-            ois.close();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 }
