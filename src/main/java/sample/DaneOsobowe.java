@@ -3,6 +3,11 @@ package sample;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 import org.apache.poi.xssf.usermodel.XSSFRow;
@@ -10,10 +15,14 @@ import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import javafx.event.ActionEvent;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.Region;
 
 /**
  * Created by pwilkin on 30-Nov-17.
@@ -33,7 +42,43 @@ public class DaneOsobowe implements HierarchicalController<MainController> {
         st.setSurname(nazwisko.getText());
         st.setPesel(pesel.getText());
         st.setIdx(indeks.getText());
+        dodajDoBazy(st);
         tabelka.getItems().add(st);
+    }
+
+    private void dodajDoBazy(Student st) {
+        try (Connection c = DriverManager.getConnection("jdbc:hsqldb:file:testdb", "SA", "")) {
+            ResultSet res = c.getMetaData().getTables(null, null, "STUDENTS", null);
+            if (!res.first()) { // nie ma tabeli STUDENTS
+                c.createStatement().execute("CREATE TABLE STUDENTS " +
+                    "(ID INT PRIMARY KEY IDENTITY, " +
+                    "NAME VARCHAR(255)," +
+                    "SURNAME VARCHAR(255)," +
+                    "IDX VARCHAR(10), " +
+                    "PESEL VARCHAR(11), " +
+                    "GRADE DOUBLE, " +
+                    "GRADE_DETAILED VARCHAR(1000))");
+            }
+            /* Tak nie robimy: Statement s = c.createStatement();
+            s.executeQuery("INSERT INTO STUDENTS (NAME, SURNAME, IDX, PESEL, GRADE, GRADE_DETAILED) VALUES (" +
+                "'" + st.getName() + "', ... itd.") */
+            PreparedStatement ps = c.prepareStatement("INSERT INTO STUDENTS (NAME, SURNAME, IDX, PESEL, GRADE, GRADE_DETAILED) " +
+                "VALUES (?, ?, ?, ?, ?, ?)");
+            ps.setString(1, st.getName());
+            ps.setString(2, st.getSurname());
+            ps.setString(3, st.getIdx());
+            ps.setString(4, st.getPesel());
+            ps.setObject(5, st.getGrade());
+            ps.setString(6, st.getGradeDetailed());
+            ps.execute();
+            ResultSet gk = c.createStatement().executeQuery("CALL IDENTITY()");
+            gk.next();
+            st.setId(gk.getInt(1));
+        } catch (SQLException e) {
+            Alert alert = new Alert(AlertType.ERROR, e.getMessage(), ButtonType.OK);
+            alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
+            alert.show();
+        }
     }
 
     public void setParentController(sample.MainController parentController) {
@@ -53,7 +98,9 @@ public class DaneOsobowe implements HierarchicalController<MainController> {
 
     public void initialize() {
         for (TableColumn<sample.Student, ?> studentTableColumn : tabelka.getColumns()) {
-            if ("imie".equals(studentTableColumn.getId())) {
+            if ("id".equals(studentTableColumn.getId())) {
+                studentTableColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
+            } else if ("imie".equals(studentTableColumn.getId())) {
                 studentTableColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
             } else if ("nazwisko".equals(studentTableColumn.getId())) {
                 studentTableColumn.setCellValueFactory(new PropertyValueFactory<>("surname"));
