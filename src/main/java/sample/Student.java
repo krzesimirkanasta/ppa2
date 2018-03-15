@@ -12,8 +12,6 @@ public class Student implements Serializable {
     protected String surname;
     protected String pesel;
     protected String idx;
-    protected Double grade;
-    protected String gradeDetailed;
 
     public Integer getId() {
         return id;
@@ -53,21 +51,5 @@ public class Student implements Serializable {
 
     public void setIdx(String idx) {
         this.idx = idx;
-    }
-
-    public Double getGrade() {
-        return grade;
-    }
-
-    public void setGrade(Double grade) {
-        this.grade = grade;
-    }
-
-    public String getGradeDetailed() {
-        return gradeDetailed;
-    }
-
-    public void setGradeDetailed(String gradeDetailed) {
-        this.gradeDetailed = gradeDetailed;
     }
 }

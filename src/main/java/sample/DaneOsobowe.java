@@ -48,28 +48,12 @@ public class DaneOsobowe implements HierarchicalController<MainController> {
 
     private void dodajDoBazy(Student st) {
         try (Connection c = DriverManager.getConnection("jdbc:hsqldb:file:testdb", "SA", "")) {
-            ResultSet res = c.getMetaData().getTables(null, null, "STUDENTS", null);
-            if (!res.first()) { // nie ma tabeli STUDENTS
-                c.createStatement().execute("CREATE TABLE STUDENTS " +
-                    "(ID INT PRIMARY KEY IDENTITY, " +
-                    "NAME VARCHAR(255)," +
-                    "SURNAME VARCHAR(255)," +
-                    "IDX VARCHAR(10), " +
-                    "PESEL VARCHAR(11), " +
-                    "GRADE DOUBLE, " +
-                    "GRADE_DETAILED VARCHAR(1000))");
-            }
-            /* Tak nie robimy: Statement s = c.createStatement();
-            s.executeQuery("INSERT INTO STUDENTS (NAME, SURNAME, IDX, PESEL, GRADE, GRADE_DETAILED) VALUES (" +
-                "'" + st.getName() + "', ... itd.") */
-            PreparedStatement ps = c.prepareStatement("INSERT INTO STUDENTS (NAME, SURNAME, IDX, PESEL, GRADE, GRADE_DETAILED) " +
-                "VALUES (?, ?, ?, ?, ?, ?)");
+            PreparedStatement ps = c.prepareStatement("INSERT INTO STUDENTS (NAME, SURNAME, IDX, PESEL) " +
+                "VALUES (?, ?, ?, ?)");
             ps.setString(1, st.getName());
             ps.setString(2, st.getSurname());
             ps.setString(3, st.getIdx());
             ps.setString(4, st.getPesel());
-            ps.setObject(5, st.getGrade());
-            ps.setString(6, st.getGradeDetailed());
             ps.execute();
             ResultSet gk = c.createStatement().executeQuery("CALL IDENTITY()");
             gk.next();
@@ -121,12 +105,8 @@ public class DaneOsobowe implements HierarchicalController<MainController> {
             XSSFRow r = sheet.createRow(row);
             r.createCell(0).setCellValue(student.getName());
             r.createCell(1).setCellValue(student.getSurname());
-            if (student.getGrade() != null) {
-                r.createCell(2).setCellValue(student.getGrade());
-            }
-            r.createCell(3).setCellValue(student.getGradeDetailed());
-            r.createCell(4).setCellValue(student.getIdx());
-            r.createCell(5).setCellValue(student.getPesel());
+            r.createCell(2).setCellValue(student.getIdx());
+            r.createCell(3).setCellValue(student.getPesel());
             row++;
         }
         try (FileOutputStream fos = new FileOutputStream("data.xlsx")) {
@@ -148,12 +128,8 @@ public class DaneOsobowe implements HierarchicalController<MainController> {
                 sample.Student student = new sample.Student();
                 student.setName(row.getCell(0).getStringCellValue());
                 student.setSurname(row.getCell(1).getStringCellValue());
-                if (row.getCell(2) != null) {
-                    student.setGrade(row.getCell(2).getNumericCellValue());
-                }
-                student.setGradeDetailed(row.getCell(3).getStringCellValue());
-                student.setIdx(row.getCell(4).getStringCellValue());
-                student.setPesel(row.getCell(5).getStringCellValue());
+                student.setIdx(row.getCell(2).getStringCellValue());
+                student.setPesel(row.getCell(3).getStringCellValue());
                 studentsList.add(student);
             }
             tabelka.getItems().clear();

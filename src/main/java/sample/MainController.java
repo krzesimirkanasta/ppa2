@@ -38,8 +38,8 @@ public class MainController implements HierarchicalController<MainController> {
         }
     }
 
-    public void oceny(ActionEvent actionEvent) {
-        loadIntoPane("oceny.fxml");
+    public void grupy(ActionEvent actionEvent) {
+        loadIntoPane("grupy.fxml");
     }
 
     @Override
