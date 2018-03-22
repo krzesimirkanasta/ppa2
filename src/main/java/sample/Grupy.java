@@ -1,10 +1,7 @@
 package sample;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
 
 import javafx.event.ActionEvent;
 import javafx.scene.control.Alert;
@@ -39,16 +36,11 @@ public class Grupy implements HierarchicalController<MainController> {
     }
 
     private void dodajDoBazy(Grupa gr) {
-        try (Connection c = DriverManager.getConnection("jdbc:hsqldb:file:testdb", "SA", "")) {
-            PreparedStatement ps = c.prepareStatement("INSERT INTO GROUPS (NAME, DESCRIPTION) " +
-                    "VALUES (?, ?)");
-            ps.setString(1, gr.getName());
-            ps.setString(2, gr.getDescription());
-            ps.execute();
-            ResultSet gk = c.createStatement().executeQuery("CALL IDENTITY()");
-            gk.next();
-            gr.setId(gk.getInt(1));
-        } catch (SQLException e) {
+        try (Session ses = parentController.getDataContainer().getSessionFactory().openSession()) {
+            ses.beginTransaction();
+            ses.persist(gr);
+            ses.getTransaction().commit();
+        } catch (HibernateException e) {
             Alert alert = new Alert(AlertType.ERROR, e.getMessage(), ButtonType.OK);
             alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
             alert.show();
@@ -75,7 +67,7 @@ public class Grupy implements HierarchicalController<MainController> {
                 nazwaColumn.setOnEditCommit((val) -> {
                     Grupa editedGroup = val.getTableView().getItems().get(val.getTablePosition().getRow());
                     editedGroup.setName(val.getNewValue());
-                    updateDatabaseValue(editedGroup, "NAME", val.getNewValue());
+                    updateDatabaseValue(editedGroup);
                 });
             } else if ("opis".equals(groupTableColumn.getId())) {
                 TableColumn<Grupa, String> opisColumn = (TableColumn<Grupa, String>) groupTableColumn;
@@ -84,7 +76,7 @@ public class Grupy implements HierarchicalController<MainController> {
                 opisColumn.setOnEditCommit((val) -> {
                     Grupa editedGroup = val.getTableView().getItems().get(val.getTablePosition().getRow());
                     editedGroup.setDescription(val.getNewValue());
-                    updateDatabaseValue(editedGroup, "DESCRIPTION", val.getNewValue());
+                    updateDatabaseValue(editedGroup);
                 });
             } else if ("usun".equals(groupTableColumn.getId())) {
                 TableColumn<Grupa, Button> usunColumn = (TableColumn<Grupa, Button>) groupTableColumn;
@@ -100,24 +92,23 @@ public class Grupy implements HierarchicalController<MainController> {
     }
 
     private void deleteDatabaseValue(Grupa p) {
-        try (Connection c = DriverManager.getConnection("jdbc:hsqldb:file:testdb", "SA", "")) {
-            PreparedStatement ps = c.prepareStatement("DELETE FROM GROUPS WHERE ID = ?");
-            ps.setInt(1, p.getId());
-            ps.execute();
-        } catch (SQLException e) {
+        try (Session ses = parentController.getDataContainer().getSessionFactory().openSession()) {
+            ses.beginTransaction();
+            ses.delete(p);
+            ses.getTransaction().commit();
+        } catch (HibernateException e) {
             Alert alert = new Alert(AlertType.ERROR, e.getMessage(), ButtonType.OK);
             alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
             alert.show();
         }
     }
 
-    private void updateDatabaseValue(Grupa editedGroup, String column, String newValue) {
-        try (Connection c = DriverManager.getConnection("jdbc:hsqldb:file:testdb", "SA", "")) {
-            PreparedStatement ps = c.prepareStatement("UPDATE GROUPS SET " + column + " = ? WHERE ID = ?");
-            ps.setString(1, newValue);
-            ps.setInt(2, editedGroup.getId());
-            ps.execute();
-        } catch (SQLException e) {
+    private void updateDatabaseValue(Grupa editedGroup) {
+        try (Session ses = parentController.getDataContainer().getSessionFactory().openSession()) {
+            ses.beginTransaction();
+            ses.merge(editedGroup);
+            ses.getTransaction().commit();
+        } catch (HibernateException e) {
             Alert alert = new Alert(AlertType.ERROR, e.getMessage(), ButtonType.OK);
             alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
             alert.show();

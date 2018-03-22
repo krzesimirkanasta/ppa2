@@ -3,16 +3,13 @@ package sample;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.ArrayList;
 
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.hibernate.HibernateException;
+import org.hibernate.Session;
 
 import javafx.event.ActionEvent;
 import javafx.scene.control.Alert;
@@ -47,18 +44,11 @@ public class DaneOsobowe implements HierarchicalController<MainController> {
     }
 
     private void dodajDoBazy(Student st) {
-        try (Connection c = DriverManager.getConnection("jdbc:hsqldb:file:testdb", "SA", "")) {
-            PreparedStatement ps = c.prepareStatement("INSERT INTO STUDENTS (NAME, SURNAME, IDX, PESEL) " +
-                "VALUES (?, ?, ?, ?)");
-            ps.setString(1, st.getName());
-            ps.setString(2, st.getSurname());
-            ps.setString(3, st.getIdx());
-            ps.setString(4, st.getPesel());
-            ps.execute();
-            ResultSet gk = c.createStatement().executeQuery("CALL IDENTITY()");
-            gk.next();
-            st.setId(gk.getInt(1));
-        } catch (SQLException e) {
+        try (Session ses = parentController.getDataContainer().getSessionFactory().openSession()) {
+            ses.beginTransaction();
+            ses.persist(st);
+            ses.getTransaction().commit();
+        } catch (HibernateException e) {
             Alert alert = new Alert(AlertType.ERROR, e.getMessage(), ButtonType.OK);
             alert.getDialogPane().setMinHeight(Region.USE_PREF_SIZE);
             alert.show();
