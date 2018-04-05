@@ -1,12 +1,16 @@
 package sample;
 
 import java.io.Serializable;
+import java.util.List;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
+import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 
 /**
@@ -32,6 +36,18 @@ public class Student implements Serializable {
 
     @Column(name = "IDX")
     protected String idx;
+
+    @ManyToMany
+    @JoinTable(name = "GROUPS_FOR_STUDENTS", joinColumns = @JoinColumn(name = "STUDENT_ID"), inverseJoinColumns = @JoinColumn(name = "GROUP_ID"))
+    protected List<Grupa> groups;
+
+    public List<Grupa> getGroups() {
+        return groups;
+    }
+
+    public void setGroups(List<Grupa> groups) {
+        this.groups = groups;
+    }
 
     public Integer getId() {
         return id;

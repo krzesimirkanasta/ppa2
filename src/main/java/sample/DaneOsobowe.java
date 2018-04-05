@@ -1,13 +1,5 @@
 package sample;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.ArrayList;
-
-import org.apache.poi.xssf.usermodel.XSSFRow;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.hibernate.HibernateException;
 import org.hibernate.Session;
 
@@ -31,6 +23,7 @@ public class DaneOsobowe implements HierarchicalController<MainController> {
     public TextField pesel;
     public TextField indeks;
     public TableView<sample.Student> tabelka;
+    //public ComboBox<Grupa> grupa;
     private sample.MainController parentController;
 
     public void dodaj(ActionEvent actionEvent) {
@@ -39,6 +32,7 @@ public class DaneOsobowe implements HierarchicalController<MainController> {
         st.setSurname(nazwisko.getText());
         st.setPesel(pesel.getText());
         st.setIdx(indeks.getText());
+        //st.setGroup(grupa.getValue());
         dodajDoBazy(st);
         tabelka.getItems().add(st);
     }
@@ -59,6 +53,23 @@ public class DaneOsobowe implements HierarchicalController<MainController> {
         this.parentController = parentController;
         //tabelka.getItems().addAll(parentController.getDataContainer().getStudents());
         tabelka.setItems(parentController.getDataContainer().getStudents());
+        /*grupa.getItems().addAll(getParentController().getDataContainer().getGroups());
+        grupa.setCellFactory(lv -> {
+            return new ListCell<Grupa>() {
+                @Override
+                protected void updateItem(Grupa item, boolean empty) {
+                    super.updateItem(item, empty);
+                    //setText(empty ? "" : item.getName());
+                    Rectangle rect = new Rectangle(200, 10, item == null ? null : new LinearGradient(0, 0, 1, 0,
+                        true, CycleMethod.REPEAT,
+                        new Stop(0.0, Color.rgb(item.getName().charAt(0) * 7 % 255, item.getName().charAt(0) * 11 % 255,
+                            item.getName().charAt(0) * 13 % 255)),
+                        new Stop(1.0, Color.rgb(item.getName().charAt(1) * 7 % 255, item.getName().charAt(1) * 11 % 255,
+                                item.getName().charAt(1) * 13 % 255))));
+                    setGraphic(rect);
+                }
+            };
+        });*/
     }
 
     public void usunZmiany() {
@@ -82,51 +93,10 @@ public class DaneOsobowe implements HierarchicalController<MainController> {
                 studentTableColumn.setCellValueFactory(new PropertyValueFactory<>("pesel"));
             } else if ("indeks".equals(studentTableColumn.getId())) {
                 studentTableColumn.setCellValueFactory(new PropertyValueFactory<>("idx"));
-            }
-        }
-
-    }
-
-    public void zapisz(ActionEvent actionEvent) {
-        XSSFWorkbook wb = new XSSFWorkbook();
-        XSSFSheet sheet = wb.createSheet("Studenci");
-        int row = 0;
-        for (sample.Student student : tabelka.getItems()) {
-            XSSFRow r = sheet.createRow(row);
-            r.createCell(0).setCellValue(student.getName());
-            r.createCell(1).setCellValue(student.getSurname());
-            r.createCell(2).setCellValue(student.getIdx());
-            r.createCell(3).setCellValue(student.getPesel());
-            row++;
-        }
-        try (FileOutputStream fos = new FileOutputStream("data.xlsx")) {
-            wb.write(fos);
-            fos.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+            } /*else if ("grupa".equals(studentTableColumn.getId())) {
+                studentTableColumn.setCellValueFactory(new PropertyValueFactory<>("group"));
+            }*/
         }
     }
 
-    /** Uwaga na serializację: https://sekurak.pl/java-vs-deserializacja-niezaufanych-danych-i-zdalne-wykonanie-kodu-czesc-i/ */
-    public void wczytaj(ActionEvent actionEvent) {
-        ArrayList<sample.Student> studentsList = new ArrayList<>();
-        try (FileInputStream ois = new FileInputStream("data.xlsx")) {
-            XSSFWorkbook wb = new XSSFWorkbook(ois);
-            XSSFSheet sheet = wb.getSheet("Studenci");
-            for (int i = 0; i <= sheet.getLastRowNum(); i++) {
-                XSSFRow row = sheet.getRow(i);
-                sample.Student student = new sample.Student();
-                student.setName(row.getCell(0).getStringCellValue());
-                student.setSurname(row.getCell(1).getStringCellValue());
-                student.setIdx(row.getCell(2).getStringCellValue());
-                student.setPesel(row.getCell(3).getStringCellValue());
-                studentsList.add(student);
-            }
-            tabelka.getItems().clear();
-            tabelka.getItems().addAll(studentsList);
-            ois.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 }
