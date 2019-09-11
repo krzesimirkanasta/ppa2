@@ -19,11 +19,11 @@ public class Oceny implements HierarchicalController<MainController> {
     public TextField nazwisko;
     public TextField ocena;
     public TextField opisOceny;
-    public TableView<Student> tabelka;
+    public TableView<sample.Student> tabelka;
     private MainController parentController;
 
     public void dodaj(ActionEvent actionEvent) {
-        Student st = new Student();
+        sample.Student st = new sample.Student();
         st.setName(imie.getText());
         st.setSurname(nazwisko.getText());
         st.setGrade(ocena.getText().isEmpty() ? null : Double.parseDouble(ocena.getText()));
@@ -43,9 +43,9 @@ public class Oceny implements HierarchicalController<MainController> {
     }
 
     public void initialize() {
-        for (TableColumn<Student, ?> studentTableColumn : tabelka.getColumns()) {
+        for (TableColumn<sample.Student, ?> studentTableColumn : tabelka.getColumns()) {
             if ("imie".equals(studentTableColumn.getId())) {
-                TableColumn<Student, String> imieColumn = (TableColumn<Student, String>) studentTableColumn;
+                TableColumn<sample.Student, String> imieColumn = (TableColumn<sample.Student, String>) studentTableColumn;
                 imieColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
                 imieColumn.setCellFactory(TextFieldTableCell.forTableColumn());
                 imieColumn.setOnEditCommit((val) -> {
@@ -53,9 +53,9 @@ public class Oceny implements HierarchicalController<MainController> {
                 });
             } else if ("nazwisko".equals(studentTableColumn.getId())) {
                 studentTableColumn.setCellValueFactory(new PropertyValueFactory<>("surname"));
-                ((TableColumn<Student, String>) studentTableColumn).setCellFactory(TextFieldTableCell.forTableColumn());
+                ((TableColumn<sample.Student, String>) studentTableColumn).setCellFactory(TextFieldTableCell.forTableColumn());
             } else if ("ocena".equals(studentTableColumn.getId())) {
-                TableColumn<Student, Double> ocenaColumn = (TableColumn<Student, Double>) studentTableColumn;
+                TableColumn<sample.Student, Double> ocenaColumn = (TableColumn<sample.Student, Double>) studentTableColumn;
                 ocenaColumn.setCellValueFactory(new PropertyValueFactory<>("grade"));
                 ocenaColumn.setCellFactory(TextFieldTableCell.forTableColumn(new StringConverter<Double>() {
                     @Override
@@ -73,7 +73,7 @@ public class Oceny implements HierarchicalController<MainController> {
                 });
             } else if ("opisOceny".equals(studentTableColumn.getId())) {
                 studentTableColumn.setCellValueFactory(new PropertyValueFactory<>("gradeDetailed"));
-                ((TableColumn<Student, String>) studentTableColumn).setCellFactory(TextFieldTableCell.forTableColumn());
+                ((TableColumn<sample.Student, String>) studentTableColumn).setCellFactory(TextFieldTableCell.forTableColumn());
             }
         }
 

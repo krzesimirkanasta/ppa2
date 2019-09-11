@@ -10,13 +10,13 @@ import javafx.collections.ObservableList;
  */
 public class DataContainer {
 
-    protected ObservableList<Student> students;
+    protected ObservableList<sample.Student> students;
 
-    public ObservableList<Student> getStudents() {
+    public ObservableList<sample.Student> getStudents() {
         return students;
     }
 
-    public void setStudents(List<Student> students) {
+    public void setStudents(List<sample.Student> students) {
         this.students = FXCollections.observableArrayList(students);
     }
 
